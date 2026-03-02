@@ -1,0 +1,17 @@
+symbol: "EURUSD=X"
+start: "2010-01-01"
+end: null
+interval: "1d"
+
+cost_bps: 1.5        # transaction cost per trade side (in bps)
+slippage_bps: 0.0    # keep 0 for now
+initial_cash: 10000
+
+strategies:
+  ma_crossover:
+    fast: 20
+    slow: 50
+  rsi_mean_reversion:
+    period: 14
+    buy_below: 30
+    sell_above: 70
