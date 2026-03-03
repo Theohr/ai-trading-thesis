@@ -22,6 +22,12 @@ def walk_forward_predict_proba(
     cfg: WalkForwardConfig,
     trainer: Callable[[pd.DataFrame, pd.Series], Any],
 ) -> Tuple[pd.Series, Dict[str, Any]]:
+    """
+    Walk-forward training with pluggable trainer.
+    Returns:
+      proba_up: predicted probability of class=1 for each predicted index
+      metrics: aggregated classification metrics over all predicted windows
+    """
     n = len(X)
     proba = pd.Series(np.nan, index=X.index, name="proba_up")
 

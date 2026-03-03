@@ -1,0 +1,132 @@
+from __future__ import annotations
+
+from pathlib import Path
+import json
+import typer
+import yaml
+import pandas as pd
+
+from thesis_trading.data.forex import load_ohlc
+from thesis_trading.features.technical import add_basic_features
+from thesis_trading.models.targets import make_direction_target, make_direction_target_thresholded
+from thesis_trading.models.logreg import train_logistic
+from thesis_trading.models.rf import train_random_forest
+from thesis_trading.strategies.baselines import ma_crossover_signals
+from thesis_trading.strategies.ml_filter import apply_proba_filter
+from thesis_trading.backtest.engine import BacktestConfig, backtest_signals, performance_summary
+
+app = typer.Typer(no_args_is_help=True)
+
+
+@app.command()
+def run(config_path: str = typer.Option(..., "--config", "-c")):
+    cfg = yaml.safe_load(Path(config_path).read_text())
+
+    symbol = cfg["symbol"]
+    interval = cfg.get("interval", "1d")
+    raw_path = Path("data/raw") / f"{symbol.replace('=','').replace('/','_')}_{interval}.csv"
+    if not raw_path.exists():
+        raise RuntimeError(f"Raw data not found: {raw_path}. Run baselines first.")
+
+    df = load_ohlc(raw_path)
+    feat_df = add_basic_features(df)
+
+    horizon = int(cfg.get("ml_horizon", 1))
+    use_neutral = bool(cfg.get("ml_use_neutral_band", False))
+    neutral_band = float(cfg.get("ml_neutral_band", 0.0005))
+
+    if use_neutral and horizon > 1:
+        y = make_direction_target_thresholded(feat_df, horizon=horizon, neutral_band=neutral_band)
+    else:
+        y = make_direction_target(feat_df, horizon=horizon)
+
+    feature_cols = cfg.get("ml_feature_cols", None)
+    if not feature_cols:
+        feature_cols = [
+            "return_1", "return_3", "return_5",
+            "return_1_lag1", "return_1_lag2", "return_1_lag3", "return_1_lag5",
+            "vol_10", "vol_20", "vol_60",
+            "vol_percentile_252",
+            "ma_ratio_10_20", "ma_ratio_20_50",
+            "rsi",
+        ]
+
+    data = feat_df[["Timestamp", "Close"] + feature_cols].copy()
+    data["target"] = y
+    data = data.dropna().reset_index(drop=True)
+
+    split_date = pd.to_datetime(cfg.get("ml_split_date", "2019-01-01"))
+    train_mask = data["Timestamp"] < split_date
+    test_mask = data["Timestamp"] >= split_date
+
+    if train_mask.sum() < 300:
+        raise RuntimeError("Not enough training rows before split_date. Adjust split_date or start date.")
+    if test_mask.sum() < 200:
+        raise RuntimeError("Not enough test rows after split_date. Adjust split_date or end date.")
+
+    X_train = data.loc[train_mask, feature_cols]
+    y_train = data.loc[train_mask, "target"].astype(int)
+
+    X_test = data.loc[test_mask, feature_cols]
+    y_test = data.loc[test_mask, "target"].astype(int)
+
+    model_name = str(cfg.get("ml_model", "rf")).lower()
+    if model_name == "logreg":
+        model = train_logistic(X_train, y_train)
+    elif model_name in ("rf", "random_forest", "randomforest"):
+        model = train_random_forest(X_train, y_train, seed=int(cfg.get("seed", 42)))
+    else:
+        raise ValueError(f"Unknown ml_model: {model_name}")
+
+    proba_up = pd.Series(model.predict_proba(X_test)[:, 1], index=X_test.index, name="proba_up")
+
+    ma_params = cfg["strategies"]["ma_crossover"]
+    base_sig = ma_crossover_signals(data, fast=int(ma_params["fast"]), slow=int(ma_params["slow"]))
+
+    thr = float(cfg.get("ml_proba_threshold", 0.6))
+
+    # Apply filter only on test period (fair evaluation)
+    test_base_sig = base_sig.loc[test_mask].reset_index(drop=True)
+    test_proba_up = proba_up.reset_index(drop=True)
+
+    test_filt_sig = apply_proba_filter(test_base_sig, test_proba_up, threshold=thr)
+
+    bt_cfg = BacktestConfig(
+        initial_cash=float(cfg.get("initial_cash", 10_000)),
+        cost_bps=float(cfg.get("cost_bps", 1.5)),
+        slippage_bps=float(cfg.get("slippage_bps", 0.0)),
+    )
+
+    test_data = data.loc[test_mask].reset_index(drop=True)
+
+    bt_base = backtest_signals(test_data, test_base_sig, bt_cfg)
+    bt_filt = backtest_signals(test_data, test_filt_sig, bt_cfg)
+
+    summ_base = performance_summary(bt_base)
+    summ_filt = performance_summary(bt_filt)
+
+    out = {
+        "model": model_name,
+        "horizon": horizon,
+        "use_neutral_band": use_neutral,
+        "neutral_band": neutral_band if use_neutral else None,
+        "split_date": str(split_date.date()),
+        "threshold": thr,
+        "train_rows": int(train_mask.sum()),
+        "test_rows": int(test_mask.sum()),
+        "baseline_ma_test": summ_base,
+        "ma_ml_filtered_test": summ_filt,
+        "features": feature_cols,
+    }
+
+    Path("reports").mkdir(exist_ok=True)
+    Path("reports/time_split_experiment.json").write_text(json.dumps(out, indent=2))
+    bt_filt.to_csv("reports/bt_time_split_ma_ml_filtered_test.csv", index=False)
+    bt_base.to_csv("reports/bt_time_split_ma_baseline_test.csv", index=False)
+
+    typer.echo("✅ Wrote reports/time_split_experiment.json and bt_time_split_*.csv")
+    typer.echo(json.dumps(out, indent=2))
+
+
+if __name__ == "__main__":
+    app()

@@ -24,8 +24,8 @@ initial_cash: 10000
 
 strategies:
   ma_crossover:
-    fast: 20
-    slow: 50
+    fast: 10
+    slow: 30
   rsi_mean_reversion:
     period: 14
     buy_below: 30
