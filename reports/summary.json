@@ -1,0 +1,18 @@
+{
+  "ma_crossover": {
+    "total_return": 0.08390808332431776,
+    "annualized_return": 0.004836855480016222,
+    "annualized_volatility": 0.08424537656950601,
+    "sharpe": 0.0993931515925118,
+    "max_drawdown": -0.2817650581125072,
+    "num_position_changes": 94
+  },
+  "rsi_mean_reversion": {
+    "total_return": -0.015367498798323553,
+    "annualized_return": -0.0009270116627720926,
+    "annualized_volatility": 0.02771497216824983,
+    "sharpe": -0.01959490602377729,
+    "max_drawdown": -0.11694758706239206,
+    "num_position_changes": 240
+  }
+}

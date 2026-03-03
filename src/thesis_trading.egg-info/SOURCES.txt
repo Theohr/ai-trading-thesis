@@ -1,0 +1,11 @@
+README.md
+pyproject.toml
+src/thesis_trading/__init__.py
+src/thesis_trading/run_baselines.py
+src/thesis_trading.egg-info/PKG-INFO
+src/thesis_trading.egg-info/SOURCES.txt
+src/thesis_trading.egg-info/dependency_links.txt
+src/thesis_trading.egg-info/top_level.txt
+src/thesis_trading/backtest/engine.py
+src/thesis_trading/data/forex.py
+src/thesis_trading/strategies/baselines.py

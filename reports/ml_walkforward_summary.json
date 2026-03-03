@@ -1,0 +1,39 @@
+{
+  "classification": {
+    "accuracy": 0.5031367628607277,
+    "f1": 0.4575342465753425,
+    "roc_auc": 0.499819045687518,
+    "n_pred": 3188
+  },
+  "baseline_ma": {
+    "total_return": 0.058952448731895535,
+    "annualized_return": 0.0034526039600064617,
+    "annualized_volatility": 0.08420390030232137,
+    "sharpe": 0.08302907184976108,
+    "max_drawdown": -0.28176505811250796,
+    "num_position_changes": 94
+  },
+  "ma_ml_filtered": {
+    "total_return": 0.0002888479444014269,
+    "annualized_return": 1.737817665259378e-05,
+    "annualized_volatility": 0.0229509444560457,
+    "sharpe": 0.012221380772686018,
+    "max_drawdown": -0.09977955048271814,
+    "num_position_changes": 328
+  },
+  "ml_config": {
+    "train_size": 1000,
+    "test_size": 250,
+    "min_train": 500,
+    "proba_threshold": 0.55,
+    "features": [
+      "return_1",
+      "return_5",
+      "vol_10",
+      "vol_20",
+      "ma_ratio",
+      "rsi"
+    ],
+    "target": "next-day direction"
+  }
+}

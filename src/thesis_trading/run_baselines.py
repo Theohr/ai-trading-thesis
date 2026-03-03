@@ -24,6 +24,9 @@ def run(config_path: str = typer.Option(..., "--config", "-c")):
     raw_path = Path("data/raw") / f"{symbol.replace('=','').replace('/','_')}_{interval}.csv"
     processed_path = Path("data/processed") / f"{symbol.replace('=','').replace('/','_')}_{interval}.csv"
 
+    raw_path.parent.mkdir(parents=True, exist_ok=True)
+    processed_path.parent.mkdir(parents=True, exist_ok=True)
+
     download_ohlc(MarketDataConfig(symbol=symbol, start=start, end=end, interval=interval), raw_path)
     df = load_ohlc(raw_path)
     df.to_csv(processed_path, index=False)

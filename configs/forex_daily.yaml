@@ -3,6 +3,11 @@ start: "2010-01-01"
 end: null
 interval: "1d"
 
+ml_train_size: 1000
+ml_test_size: 250
+ml_min_train: 500
+ml_proba_threshold: 0.55
+
 cost_bps: 1.5        # transaction cost per trade side (in bps)
 slippage_bps: 0.0    # keep 0 for now
 initial_cash: 10000
