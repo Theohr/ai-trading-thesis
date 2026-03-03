@@ -1,0 +1,20 @@
+{
+  "symbol": "EURUSD=X",
+  "interval": "1d",
+  "split_date": "2019-01-01",
+  "test_rows": 1865,
+  "model_path": "reports\\rl\\ppo_model_cost3.zip",
+  "performance": {
+    "total_return": 0.0,
+    "annualized_return": 0.0,
+    "annualized_volatility": 0.0,
+    "sharpe": 0.0,
+    "max_drawdown": 0.0
+  },
+  "position_stats": {
+    "pct_short": 0.0,
+    "pct_flat": 1.0,
+    "pct_long": 0.0,
+    "num_position_changes": 0
+  }
+}

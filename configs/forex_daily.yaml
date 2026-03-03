@@ -6,21 +6,30 @@ interval: "1d"
 ml_train_size: 1000
 ml_test_size: 250
 ml_min_train: 500
-
 seed: 42
 ml_model: "rf"
 ml_proba_threshold: 0.6
-
 ml_horizon: 3
 ml_use_neutral_band: true
 ml_neutral_band: 0.0005
 ml_split_date: "2019-01-01"
-
 ml_thresholds: [0.50, 0.52, 0.55, 0.60, 0.65, 0.70]
 
 cost_bps: 1.5        # transaction cost per trade side (in bps)
 slippage_bps: 0.0    # keep 0 for now
 initial_cash: 10000
+
+rl_split_date: "2019-01-01"
+rl_train_timesteps: 100000
+rl_lr: 0.0003
+rl_n_steps: 2048
+rl_batch_size: 64
+rl_gamma: 0.99
+rl_gae_lambda: 0.95
+rl_ent_coef: 0.0
+rl_reward_scale: 1.0
+# rl_max_episode_steps: 0   # keep 0 for full length episodes
+# rl_model_path: "reports/rl/ppo_model.zip"  # only needed for eval if custom
 
 strategies:
   ma_crossover:
