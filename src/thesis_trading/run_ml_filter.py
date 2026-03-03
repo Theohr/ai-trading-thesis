@@ -14,6 +14,8 @@ from thesis_trading.models.walkforward import WalkForwardConfig, walk_forward_pr
 from thesis_trading.strategies.baselines import ma_crossover_signals
 from thesis_trading.strategies.ml_filter import apply_proba_filter
 from thesis_trading.backtest.engine import BacktestConfig, backtest_signals, performance_summary
+from thesis_trading.models.logreg import train_logistic
+from thesis_trading.models.rf import train_random_forest
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -59,7 +61,15 @@ def run(config_path: str = typer.Option(..., "--config", "-c")):
         min_train=int(cfg.get("ml_min_train", 500)),
         proba_threshold=float(cfg.get("ml_proba_threshold", 0.55)),
     )
-    proba_up, clf_metrics = walk_forward_predict_proba(X, y, wf_cfg)
+    model_name = str(cfg.get("ml_model", "logreg")).lower()
+    if model_name == "logreg":
+        trainer = train_logistic
+    elif model_name in ("rf", "random_forest", "randomforest"):
+        trainer = lambda Xtr, ytr: train_random_forest(Xtr, ytr, seed=int(cfg.get("seed", 42)))
+    else:
+        raise ValueError(f"Unknown ml_model: {model_name}")
+
+    proba_up, clf_metrics = walk_forward_predict_proba(X, y, wf_cfg, trainer=trainer)
 
     # Baseline MA signals aligned to 'data' index (NOT original df index)
     base_sig = ma_crossover_signals(data, fast=int(cfg["strategies"]["ma_crossover"]["fast"]),
@@ -89,6 +99,7 @@ def run(config_path: str = typer.Option(..., "--config", "-c")):
         "classification": clf_metrics,
         "baseline_ma": summ_base,
         "ma_ml_filtered": summ_filt,
+        "model": model_name,
         "ml_config": {
             "train_size": wf_cfg.train_size,
             "test_size": wf_cfg.test_size,

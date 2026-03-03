@@ -1,0 +1,35 @@
+{
+  "classification": {
+    "accuracy": 0.49560853199498117,
+    "f1": 0.4891994917407878,
+    "roc_auc": 0.5027859875596372,
+    "n_pred": 3188
+  },
+  "baseline_ma": {
+    "total_return": 0.058952448731895535,
+    "annualized_return": 0.0034526039600064617,
+    "annualized_volatility": 0.08420390030232137,
+    "sharpe": 0.08302907184976108,
+    "max_drawdown": -0.28176505811250796,
+    "num_position_changes": 94
+  },
+  "model": "rf",
+  "thresholds": [
+    0.5,
+    0.52,
+    0.55,
+    0.6,
+    0.65,
+    0.7
+  ],
+  "features": [
+    "return_1",
+    "return_5",
+    "vol_10",
+    "vol_20",
+    "ma_ratio",
+    "rsi"
+  ],
+  "target": "next-day direction",
+  "output_csv": "reports/threshold_sweep_rf.csv"
+}
